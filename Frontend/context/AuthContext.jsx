@@ -33,7 +33,12 @@ export const AuthProvider = ({ children })=>{
 
 const login = async (credentials) => {
   try {
-    const { data } = await axios.post("/api/auth/login", credentials); 
+    const { data } = await axios.post("/api/auth/login", credentials, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     if (data.success) {
       setAuthUser(data.userData);
       connectSocket(data.userData);
@@ -48,6 +53,7 @@ const login = async (credentials) => {
     toast.error(error.response?.data?.message || error.message);
   }
 };
+
 
 
 // Logout function to handle user logout and socket disconnection
