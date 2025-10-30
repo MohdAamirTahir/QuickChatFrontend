@@ -33,7 +33,7 @@ export const AuthProvider = ({ children })=>{
 
 const login = async (credentials) => {
   try {
-    const { data } = await axios.post("/api/auth/login", credentials); // <- hardcoded URL
+    const { data } = await axios.post("/api/auth/login", credentials); 
     if (data.success) {
       setAuthUser(data.userData);
       connectSocket(data.userData);
