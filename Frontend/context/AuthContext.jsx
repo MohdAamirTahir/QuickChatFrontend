@@ -31,23 +31,24 @@ export const AuthProvider = ({ children })=>{
 
 // Login function to handle user authentication and socket connection
 
-const login = async (state, credentials)=>{
-    try {
-        const { data } = await axios.post(`/api/auth/${state}`, credentials);
-        if (data.success){
-            setAuthUser(data.userData);
-            connectSocket(data.userData);
-            axios.defaults.headers.common["token"] = data.token;
-            setToken(data.token);
-            localStorage.setItem("token", data.token)
-            toast.success(data.message)
-        }else{
-            toast.error(data.message)
-        }
-    } catch (error) {
-        toast.error(error.message)
+const login = async (state, credentials) => {
+  try {
+    const { data } = await axios.post(`/api/auth/${state}`, credentials);
+    if (data.success) {
+      setAuthUser(data.userData);
+      connectSocket(data.userData);
+      axios.defaults.headers.common["token"] = data.token;
+      setToken(data.token);
+      localStorage.setItem("token", data.token);
+      toast.success(data.message);
+    } else {
+      toast.error(data.message);
     }
-}
+  } catch (error) {
+    toast.error(error.response?.data?.message || error.message);
+  }
+};
+
 
 // Logout function to handle user logout and socket disconnection
 
