@@ -1,10 +1,7 @@
 import { createContext, useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/api"; // use your custom axios instance
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
-
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://quickchatbackend-hjp7.onrender.com";
-axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
 
@@ -14,12 +11,12 @@ export const AuthProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  // Check authentication on page load
+  // Check authentication
   const checkAuth = async () => {
     if (!token) return;
     try {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      const { data } = await axios.get("/api/auth/check");
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const { data } = await api.get("/api/auth/check");
       if (data.success) {
         setAuthUser(data.user);
         connectSocket(data.user);
@@ -30,13 +27,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login or Signup
   const login = async (state, credentials) => {
     try {
-      const { data } = await axios.post(`/api/auth/${state.toLowerCase()}`, credentials);
+      const { data } = await api.post(`/api/auth/${state.toLowerCase()}`, credentials);
       if (data.success) {
         setAuthUser(data.userData || data.user);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+        api.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
         setToken(data.token);
         localStorage.setItem("token", data.token);
         toast.success(data.message || `${state} successful`);
@@ -54,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setAuthUser(null);
     setOnlineUsers([]);
-    axios.defaults.headers.common["Authorization"] = null;
+    api.defaults.headers.common["Authorization"] = null;
     toast.success("Logged out successfully");
     if (socket) socket.disconnect();
     setSocket(null);
@@ -62,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (body) => {
     try {
-      const { data } = await axios.put("/api/auth/update-profile", body);
+      const { data } = await api.put("/api/auth/update-profile", body);
       if (data.success) {
         setAuthUser(data.user);
         toast.success("Profile updated successfully");
@@ -75,33 +71,25 @@ export const AuthProvider = ({ children }) => {
   const connectSocket = (userData) => {
     if (!userData || socket?.connected) return;
 
-    const newSocket = io(backendUrl, {
+    const newSocket = io(import.meta.env.VITE_BACKEND_URL || "https://quickchatbackend.onrender.com", {
       auth: { userId: userData._id },
       withCredentials: true,
     });
 
     setSocket(newSocket);
 
-    newSocket.on("connect", () => {
-      console.log("Socket connected:", newSocket.id);
-    });
-
-    newSocket.on("getOnlineUsers", (userIds) => {
-      setOnlineUsers(userIds);
-    });
-
-    newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
-    });
+    newSocket.on("connect", () => console.log("Socket connected:", newSocket.id));
+    newSocket.on("getOnlineUsers", setOnlineUsers);
+    newSocket.on("disconnect", () => console.log("Socket disconnected"));
   };
 
   useEffect(() => {
-    if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    if (token) api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     checkAuth();
   }, []);
 
   const value = {
-    axios,
+    api, // <-- use this in other components
     authUser,
     onlineUsers,
     socket,
