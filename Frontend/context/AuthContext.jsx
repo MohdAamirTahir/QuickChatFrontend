@@ -26,21 +26,21 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
-      logout(); // clear invalid token
+      logout();
     }
   };
 
   // Login or Signup
   const login = async (state, credentials) => {
     try {
-      const { data } = await axios.post(`/api/auth/${state}`, credentials);
+      const { data } = await axios.post(`/api/auth/${state.toLowerCase()}`, credentials);
       if (data.success) {
-        setAuthUser(data.userData);
+        setAuthUser(data.userData || data.user);
         axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
         setToken(data.token);
         localStorage.setItem("token", data.token);
-        toast.success(data.message);
-        connectSocket(data.userData);
+        toast.success(data.message || `${state} successful`);
+        connectSocket(data.userData || data.user);
       } else {
         toast.error(data.message);
       }
@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
@@ -61,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     setSocket(null);
   };
 
-  // Update profile
   const updateProfile = async (body) => {
     try {
       const { data } = await axios.put("/api/auth/update-profile", body);
@@ -74,7 +72,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Connect Socket.IO
   const connectSocket = (userData) => {
     if (!userData || socket?.connected) return;
 
